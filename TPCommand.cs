@@ -9,7 +9,7 @@ namespace testMod
     {
         // Keep this as CommandType.Console if you want to run it from the dedicated server window.
         // Change to CommandType.Chat if you want admins to use it inside the game chat.
-        public override CommandType Type => CommandType.Console;
+        public override CommandType Type => CommandType.Chat | CommandType.Console;
 
         public override string Command => "tp";
 
