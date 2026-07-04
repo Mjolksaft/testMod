@@ -1,43 +1,78 @@
 using Terraria;
 using Terraria.ModLoader;
-using Terraria.Chat;
 using Terraria.ID;
 using Microsoft.Xna.Framework;
-using Terraria.Localization;
 
-namespace testMod
+namespace YourModName.Commands
 {
-    public class AppleCommand : ModCommand
+    public class GiveCommand : ModCommand
     {
         public override CommandType Type => CommandType.Console;
 
-        public override string Command => "apple";
+        public override string Command => "give";
 
-        public override string Description => "Sends <server> message to chat";
+        public override string Description => "Gives an item to a specific player";
 
         public override void Action(CommandCaller caller, string input, string[] args)
         {
-            string text = string.Join(" ", args);
-
-            // If there's a message, broadcast it to chat
-            if (!string.IsNullOrEmpty(text))
+            if (args.Length < 2)
             {
-                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral($"<server> {text}"), Color.White);
+                caller.Reply("Usage: give <playerName> <item>", Color.Red);
+                return;
+            }
 
-                // Also run the apple detection
-                if (text.ToLower().Contains("apple"))
+            Player target = null;
+            int itemType = 0;
+
+            for (int split = 1; split < args.Length; split++)
+            {
+                string testName = string.Join(" ", args[..split]);
+                string testItem = string.Join(" ", args[split..]);
+
+                Player matched = null;
+                for (int i = 0; i < Main.maxPlayers; i++)
                 {
-                    ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral("System detected an apple mention!"), Color.Yellow);
+                    Player player = Main.player[i];
+                    if (player.active && string.Equals(player.name, testName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        matched = player;
+                        break;
+                    }
                 }
+
+                if (matched == null)
+                    continue;
+
+                if (int.TryParse(testItem, out int id) && id > 0)
+                {
+                    target = matched;
+                    itemType = id;
+                    break;
+                }
+
+                foreach (var kvp in ContentSamples.ItemsByType)
+                {
+                    if (kvp.Value != null && string.Equals(kvp.Value.Name, testItem, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = matched;
+                        itemType = kvp.Key;
+                        break;
+                    }
+                }
+
+                if (target != null)
+                    break;
             }
 
-            // Spawn an apple for every active player
-            for (int i = 0; i < Main.maxPlayers; i++)
+            if (target == null)
             {
-                Player player = Main.player[i];
-                if (player.active)
-                    player.QuickSpawnItem(player.GetSource_DropAsItem(), ItemID.Apple);
+                caller.Reply($"Could not find a matching player or item in '{string.Join(" ", args)}'", Color.Red);
+                return;
             }
+
+            target.QuickSpawnItem(target.GetSource_DropAsItem(), itemType);
+            string displayName = Lang.GetItemNameValue(itemType);
+            caller.Reply($"Gave {displayName} to {target.name}", Color.Green);
         }
     }
 }
