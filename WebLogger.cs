@@ -19,7 +19,7 @@ namespace testMod
         private static void SendNotification(string action, string sender, string target, string detail, string result)
         {
             int port = Netplay.ListenPort;
-            string url = $"http://localhost:8080/mod/{port}/log";
+            string url = $"https://annuity-anemic-circulate.ngrok-free.dev/mod/{port}/log";
 
             var payload = new
             {

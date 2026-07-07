@@ -67,12 +67,53 @@ namespace testMod
                 }
             }
 
-            Vector2 targetPosition = new Vector2(target.SpawnX * 16f + 8, target.SpawnY * 16f - 50);
-            target.Teleport(targetPosition, 1);
-            target.velocity = Vector2.Zero;
+            // Fix applied here: Use Player.CheckSpawn for multiplayer bed validation
+            int spawnX = Main.spawnTileX;
+            int spawnY = Main.spawnTileY;
 
-            if (Main.netMode == NetmodeID.Server)
+            if (target.SpawnX > 0 && target.SpawnY > 0 && Player.CheckSpawn(target.SpawnX, target.SpawnY))
             {
+                spawnX = target.SpawnX;
+                spawnY = target.SpawnY;
+            }
+
+            if (spawnX <= 0 || spawnY <= 0 || spawnX >= Main.maxTilesX || spawnY >= Main.maxTilesY)
+            {
+                spawnX = Main.spawnTileX;
+                spawnY = Main.spawnTileY;
+            }
+
+            Vector2 targetPosition = new Vector2(spawnX * 16f + 8f, spawnY * 16f - target.height);
+
+            // Reset physics states so the player doesn't instantly die from accumulated fall velocity
+            target.velocity = Vector2.Zero;
+            target.fallStart = (int)(target.position.Y / 16f);
+
+            // Handle Multiplayer Synchronization flawlessly
+            if (Main.netMode == NetmodeID.SinglePlayer)
+            {
+                target.Teleport(targetPosition, 1);
+            }
+            else if (Main.netMode == NetmodeID.Server)
+            {
+                target.Teleport(targetPosition, 1);
+
+                NetMessage.SendData(
+                    MessageID.TeleportEntity,
+                    -1, 
+                    -1, 
+                    null,
+                    0, 
+                    target.whoAmI, 
+                    targetPosition.X,
+                    targetPosition.Y,
+                    1 
+                );
+            }
+            else if (Main.netMode == NetmodeID.MultiplayerClient && caller.Player == target)
+            {
+                target.Teleport(targetPosition, 1);
+
                 NetMessage.SendData(
                     MessageID.TeleportEntity,
                     -1,
