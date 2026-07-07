@@ -1,4 +1,6 @@
 using Terraria;
+using Terraria.Chat;
+using Terraria.Localization;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Microsoft.Xna.Framework;
@@ -11,12 +13,22 @@ namespace testMod
 
         public override string Command => "kill";
 
-        public override string Usage => "/kill all | /kill <npc_name>";
-
         public override string Description => "Kills all NPCs or NPCs matching a name.";
 
         public override void Action(CommandCaller caller, string input, string[] args)
         {
+            if (caller.Player != null)
+            {
+                var gp = caller.Player.GetModPlayer<GamemodePlayer>();
+                if (gp.Gamemode != 2)
+                {
+                    caller.Reply("You don't have permission to use this command! (gamemode 2 required)", Color.Red);
+                    return;
+                }
+            }
+
+            string senderName = caller.Player?.name ?? "Server";
+
             if (args.Length < 1)
             {
                 caller.Reply("Usage: /kill all | /kill <npc_name>", Color.Red);
@@ -39,7 +51,6 @@ namespace testMod
                         count++;
                     }
                 }
-                caller.Reply($"Killed {count} NPCs.", Color.Green);
             }
             else
             {
@@ -58,8 +69,16 @@ namespace testMod
                         count++;
                     }
                 }
-                caller.Reply($"Killed {count} NPC(s) named '{targetName}'.", Color.Green);
             }
+
+            string msg = $"{senderName} killed {count} {targetName}";
+            if (Main.netMode == NetmodeID.Server)
+                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(msg), Color.Green);
+            else
+                Main.NewText(msg, Color.Green);
+
+            if (caller.Player != null)
+                WebLogger.Notify("kill", senderName, targetName, count.ToString());
         }
     }
 }

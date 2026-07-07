@@ -1,14 +1,14 @@
 using Terraria;
+using Terraria.Chat;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using Microsoft.Xna.Framework;
-using Terraria.ID; // REQUIRED FOR MessageID
+using Terraria.ID;
 
 namespace testMod
 {
     public class TPCommand : ModCommand
     {
-        // Keep this as CommandType.Console if you want to run it from the dedicated server window.
-        // Change to CommandType.Chat if you want admins to use it inside the game chat.
         public override CommandType Type => CommandType.Chat | CommandType.Console;
 
         public override string Command => "tp";
@@ -17,6 +17,18 @@ namespace testMod
 
         public override void Action(CommandCaller caller, string input, string[] args)
         {
+            if (caller.Player != null)
+            {
+                var gp = caller.Player.GetModPlayer<GamemodePlayer>();
+                if (gp.Gamemode != 2)
+                {
+                    caller.Reply("You don't have permission to use this command! (gamemode 2 required)", Color.Red);
+                    return;
+                }
+            }
+
+            string senderName = caller.Player?.name ?? "Server";
+
             if (args.Length < 2)
             {
                 caller.Reply("Usage: tp <player1> <player2>", Color.Red);
@@ -58,30 +70,33 @@ namespace testMod
                 return;
             }
 
-            // 1. Set target position to player2's exact current location
             Vector2 targetPosition = player2.position;
-
-            // 2. Move player1 on the server side
             player1.Teleport(targetPosition, 1);
-            player1.velocity = Vector2.Zero; // Prevent momentum from carrying over
+            player1.velocity = Vector2.Zero;
 
-            // 3. BROADCAST TO CLIENTS: Tell the entire server that player1 has moved
             if (Main.netMode == NetmodeID.Server)
             {
                 NetMessage.SendData(
                     MessageID.TeleportEntity,
-                    -1,               // -1 sends the packet to ALL connected clients
-                    -1,               // Ignore no one
+                    -1,
+                    -1,
                     null,
-                    0,                // 0 specifies that the entity type is a Player
-                    player1.whoAmI,   // The index of the player being teleported
+                    0,
+                    player1.whoAmI,
                     targetPosition.X,
                     targetPosition.Y,
-                    1                 // Teleport visual style (1 = Rod of Discord effect)
+                    1
                 );
             }
 
-            caller.Reply($"Teleported {player1.name} to {player2.name}", Color.Green);
+            string msg = $"{senderName} teleported {player1.name} to {player2.name}";
+            if (Main.netMode == NetmodeID.Server)
+                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(msg), Color.Green);
+            else
+                Main.NewText(msg, Color.Green);
+
+            if (caller.Player != null)
+                WebLogger.Notify("tp", senderName, player1.name, player2.name);
         }
     }
 }

@@ -1,0 +1,13 @@
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.csproj.AssemblyReference.cache
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.AssemblyInfoInputs.cache
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.AssemblyInfo.cs
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.csproj.CoreCompileInputs.cache
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.sourcelink.json
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\bin\Debug\net8.0\testMod.deps.json
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\bin\Debug\net8.0\testMod.dll
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\bin\Debug\net8.0\testMod.pdb
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.dll
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\refint\testMod.dll
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\testMod.pdb
+C:\Users\kalla\Documents\My Games\Terraria\tModLoader\ModSources\testMod\obj\Debug\net8.0\ref\testMod.dll

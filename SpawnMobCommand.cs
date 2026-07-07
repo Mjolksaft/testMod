@@ -1,4 +1,6 @@
 using Terraria;
+using Terraria.Chat;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using Microsoft.Xna.Framework;
 using Terraria.ID;
@@ -8,7 +10,6 @@ namespace testMod
 {
     public class SpawnMobCommand : ModCommand
     {
-        // Keep Console enabled, but handle the null player safely!
         public override CommandType Type => CommandType.Chat | CommandType.Console;
 
         public override string Command => "spawnmob";
@@ -17,29 +18,37 @@ namespace testMod
 
         public override void Action(CommandCaller caller, string input, string[] args)
         {
+            if (caller.Player != null)
+            {
+                var gp = caller.Player.GetModPlayer<GamemodePlayer>();
+                if (gp.Gamemode != 2)
+                {
+                    caller.Reply("You don't have permission to use this command! (gamemode 2 required)", Color.Red);
+                    return;
+                }
+            }
+
+            string senderName = caller.Player?.name ?? "Server";
+
             if (args.Length < 1)
             {
                 caller.Reply("Usage: spawnmob <npc_id_or_name> [player_name]", Color.Red);
                 return;
             }
 
-            // --- STEP 1: RESOLVE ARGUMENTS ---
             string npcSearchTerm = args[0];
             string playerSearchTerm = null;
 
-            // If there is more than 1 argument, treat the last word as the player's name
             if (args.Length > 1)
             {
                 playerSearchTerm = args[args.Length - 1];
                 npcSearchTerm = string.Join(" ", args[..^1]);
             }
 
-            // --- STEP 2: MULTIPLAYER CONSOLE SAFE PLAYER TARGETING ---
             Player target = null;
 
             if (!string.IsNullOrEmpty(playerSearchTerm))
             {
-                // Try finding the player explicitly typed in the console
                 for (int i = 0; i < Main.maxPlayers; i++)
                 {
                     Player p = Main.player[i];
@@ -58,14 +67,12 @@ namespace testMod
             }
             else
             {
-                // If run by an active player in-game, target them
                 if (caller.Player != null && caller.Player.active)
                 {
                     target = caller.Player;
                 }
                 else
                 {
-                    // CONSOLE FALLBACK: Loop through and target the first active player online
                     for (int i = 0; i < Main.maxPlayers; i++)
                     {
                         if (Main.player[i].active)
@@ -77,14 +84,12 @@ namespace testMod
                 }
             }
 
-            // Ultimate fallback if the server console runs it when the server is empty
             if (target == null || !target.active)
             {
                 caller.Reply("Command failed: There are no active players online to spawn the mob near!", Color.Red);
                 return;
             }
 
-            // --- STEP 3: FIND THE NPC ID ---
             int npcId = 0;
             bool npcFound = false;
 
@@ -113,24 +118,27 @@ namespace testMod
                 return;
             }
 
-            // --- STEP 4: SPAWN AND BROADCAST MULTIPLAYER PACKET ---
             Vector2 spawnPos = target.position;
-            spawnPos.Y -= 48f; // Spawns above their head
+            spawnPos.Y -= 48f;
 
-            // Since this runs on the server side, get the correct source context
             var source = target.GetSource_FromThis();
             int spawnedIndex = NPC.NewNPC(source, (int)spawnPos.X, (int)spawnPos.Y, npcId);
 
             if (spawnedIndex >= 0 && spawnedIndex < Main.maxNPCs)
             {
-                // Crucial for dedicated servers: Sync NPC packet data so connected clients can see it
                 if (Main.netMode == NetmodeID.Server)
-                {
                     NetMessage.SendData(MessageID.SyncNPC, -1, -1, null, spawnedIndex);
-                }
 
                 string displayName = Lang.GetNPCNameValue(npcId);
-                caller.Reply($"Spawned {displayName} near {target.name} successfully!", Color.Green);
+
+                string msg = $"{senderName} spawned {displayName} near {target.name}";
+                if (Main.netMode == NetmodeID.Server)
+                    ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(msg), Color.Green);
+                else
+                    Main.NewText(msg, Color.Green);
+
+                if (caller.Player != null)
+                    WebLogger.Notify("spawnmob", senderName, target.name, displayName);
             }
             else
             {

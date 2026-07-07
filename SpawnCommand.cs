@@ -1,4 +1,6 @@
 using Terraria;
+using Terraria.Chat;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using Microsoft.Xna.Framework;
 using Terraria.ID;
@@ -16,6 +18,17 @@ namespace testMod
 
         public override void Action(CommandCaller caller, string input, string[] args)
         {
+            if (caller.Player != null)
+            {
+                var gp = caller.Player.GetModPlayer<GamemodePlayer>();
+                if (gp.Gamemode != 2)
+                {
+                    caller.Reply("You don't have permission to use this command! (gamemode 2 required)", Color.Red);
+                    return;
+                }
+            }
+
+            string senderName = caller.Player?.name ?? "Server";
             Player target = null;
 
             if (args.Length == 0)
@@ -55,7 +68,6 @@ namespace testMod
             }
 
             Vector2 targetPosition = new Vector2(target.SpawnX * 16f + 8, target.SpawnY * 16f - 50);
-            Console.WriteLine(targetPosition);
             target.Teleport(targetPosition, 1);
             target.velocity = Vector2.Zero;
 
@@ -74,7 +86,18 @@ namespace testMod
                 );
             }
 
-            caller.Reply($"Teleported {target.name} to spawn", Color.Green);
+            string msg;
+            if (caller.Player == target)
+                msg = $"{target.name} was teleported to spawn";
+            else
+                msg = $"{senderName} teleported {target.name} to spawn";
+            if (Main.netMode == NetmodeID.Server)
+                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(msg), Color.Green);
+            else
+                Main.NewText(msg, Color.Green);
+
+            if (caller.Player != null)
+                WebLogger.Notify("spawn", senderName, target.name, "spawn");
         }
     }
 }
